@@ -264,6 +264,14 @@ void dispatch_locktab(std::string arg) {
 	g_Hy3Layout->setTabLock(workspace.get(), mode);
 }
 
+void dispatch_equalize(std::string arg) {
+	auto workspace = workspace_for_action();
+	if (!valid(workspace)) return;
+
+	bool recursive = (arg == "recursive");
+	g_Hy3Layout->equalize(workspace.get(), recursive);
+}
+
 SDispatchResult dispatch_debug(std::string arg) {
 	auto workspace = workspace_for_action();
 
@@ -292,5 +300,6 @@ void registerDispatchers() {
 	HyprlandAPI::addDispatcher(PHANDLE, "hy3:killactive", dispatch_killactive);
 	HyprlandAPI::addDispatcher(PHANDLE, "hy3:expand", dispatch_expand);
 	HyprlandAPI::addDispatcher(PHANDLE, "hy3:locktab", dispatch_locktab);
+	HyprlandAPI::addDispatcher(PHANDLE, "hy3:equalize", dispatch_equalize);
 	HyprlandAPI::addDispatcherV2(PHANDLE, "hy3:debugnodes", dispatch_debug);
 }

@@ -151,6 +151,7 @@ public:
 	void killFocusedNode(const CWorkspace* workspace);
 	void expand(const CWorkspace* workspace, ExpandOption, ExpandFullscreenOption);
 	void setTabLock(const CWorkspace* workspace, TabLockMode);
+	void equalize(const CWorkspace* workspace, bool recursive = false);
 	static void warpCursorToBox(const Vector2D& pos, const Vector2D& size);
 	static void warpCursorWithFocus(const Vector2D& pos, bool force = false);
 

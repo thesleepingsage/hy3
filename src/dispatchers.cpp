@@ -285,7 +285,35 @@ SDispatchResult dispatch_debug(std::string arg) {
 	}
 }
 
+SDispatchResult dispatch_swapwindow(std::string value) {
+	auto args = CVarList(value);
+
+	// Parse two window addresses: "address:0xABC, address:0xDEF"
+	if (args.size() < 2) {
+		hy3_log(ERR, "hy3:swapwindow requires two window addresses");
+		return { .success = false, .error = "requires two window addresses" };
+	}
+
+	PHLWINDOW windowA = g_pCompositor->getWindowByRegex(args[0]);
+	PHLWINDOW windowB = g_pCompositor->getWindowByRegex(args[1]);
+
+	if (!windowA || !windowB) {
+		hy3_log(ERR, "hy3:swapwindow could not find one or both windows");
+		return { .success = false, .error = "could not find one or both windows" };
+	}
+
+	if (windowA == windowB) {
+		hy3_log(LOG, "hy3:swapwindow same window, ignoring");
+		return { .success = true };
+	}
+
+	hy3_log(LOG, "hy3:swapwindow swapping {} and {}", (void*)windowA.get(), (void*)windowB.get());
+	g_Hy3Layout->switchWindows(windowA, windowB);
+	return { .success = true };
+}
+
 void registerDispatchers() {
+	HyprlandAPI::addDispatcherV2(PHANDLE, "hy3:swapwindow", dispatch_swapwindow);
 	HyprlandAPI::addDispatcher(PHANDLE, "hy3:makegroup", dispatch_makegroup);
 	HyprlandAPI::addDispatcher(PHANDLE, "hy3:changegroup", dispatch_changegroup);
 	HyprlandAPI::addDispatcher(PHANDLE, "hy3:setephemeral", dispatch_setephemeral);

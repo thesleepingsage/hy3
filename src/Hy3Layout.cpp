@@ -584,7 +584,41 @@ std::any Hy3Layout::layoutMessage(SLayoutMessageHeader header, std::string conte
 SWindowRenderLayoutHints Hy3Layout::requestRenderHints(PHLWINDOW window) { return {}; }
 
 void Hy3Layout::switchWindows(PHLWINDOW pWindowA, PHLWINDOW pWindowB) {
-	// todo
+	// NOTE: This implementation exists for when hy3 upstream adds proper support.
+	// Currently, Hyprland's swapwindow dispatcher doesn't properly call this
+	// through the hy3 layout for unknown reasons.
+
+	if (!pWindowA || !pWindowB || pWindowA == pWindowB) return;
+
+	auto* nodeA = this->getNodeFromWindow(pWindowA.get());
+	auto* nodeB = this->getNodeFromWindow(pWindowB.get());
+
+	if (!nodeA || !nodeB) return;
+	if (!nodeA->data.is_window() || !nodeB->data.is_window()) return;
+
+	hy3_log(LOG, "switchWindows: swapping nodes");
+
+	// Handle cross-workspace
+	if (nodeA->workspace != nodeB->workspace) {
+		std::swap(pWindowA->m_workspace, pWindowB->m_workspace);
+		std::swap(pWindowA->m_monitor, pWindowB->m_monitor);
+	}
+
+	// Use hy3's swapData to swap the node contents
+	Hy3Node::swapData(*nodeA, *nodeB);
+
+	// Animate and recalculate BOTH nodes
+	pWindowA->setAnimationsToMove();
+	pWindowB->setAnimationsToMove();
+
+	nodeA->recalcSizePosRecursive();
+	nodeB->recalcSizePosRecursive();
+
+	nodeA->updateTabBarRecursive();
+	nodeB->updateTabBarRecursive();
+
+	g_pHyprRenderer->damageWindow(pWindowA);
+	g_pHyprRenderer->damageWindow(pWindowB);
 }
 
 void Hy3Layout::moveWindowTo(PHLWINDOW window, const std::string& direction, bool silent) {

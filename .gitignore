@@ -14,8 +14,3 @@
 /.vscode/
 
 /*.log
-
-# local fork additions
-/FORK_STATUS.md
-/docs/
-/scripts/

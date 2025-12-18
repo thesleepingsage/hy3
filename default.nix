@@ -43,7 +43,7 @@
   dontStrip = true;
 
   meta = with lib; {
-    homepage = "https://github.com/outfoxxed/hy3";
+    homepage = "https://github.com/thesleepingsage/hy3";
     description = "Hyprland plugin for an i3 like manual tiling layout";
     license = licenses.gpl3;
     platforms = platforms.linux;

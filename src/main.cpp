@@ -92,7 +92,7 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
 
 	HyprlandAPI::reloadConfig();
 
-	return {"hy3", "i3 like layout for hyprland", "outfoxxed", "0.1"};
+	return {"hy3", "i3 like layout for hyprland", "thesleepingsage", "0.1"};
 }
 
 APICALL EXPORT void PLUGIN_EXIT() {}

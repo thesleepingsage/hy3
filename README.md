@@ -32,7 +32,7 @@ movewindow -> hy3:movewindow
 ### hyprpm
 
 ```bash
-hyprpm add https://github.com/outfoxxed/hy3
+hyprpm add https://github.com/thesleepingsage/hy3
 hyprpm update      # update
 hyprpm update -f   # force header refresh if needed
 ```

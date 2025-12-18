@@ -13,7 +13,8 @@ See: https://github.com/outfoxxed/hy3/issues/259
 
 | Status | Commit | Feature | Description |
 |--------|--------|---------|-------------|
-| ✅ | c24bfa4 | hy3:equalize | Custom dispatcher to equalize window sizes |
+| ✅ | c119158 | hy3:equalize | Custom dispatcher to equalize window sizes |
+| ✅ | b1322b1 | hy3:swapwindow | Address-based window swapping dispatcher |
 
 ## Cherry-picked from Upstream
 
@@ -41,9 +42,9 @@ Hyprland 0.52.2 tag was missing `FocusState.hpp` (added post-0.52.0, not in patc
 
 ## Branch Structure
 
-- `main` - Production branch with our customizations
+- `personal` - Working branch with our customizations (tracks origin/personal)
 - `upstream-sync` - Mirrors upstream/master for comparison
-- `feature/*` - Feature branches for new work
+- `feat/*` - Feature branches for new work
 
 ## Sync Workflow
 
@@ -56,11 +57,11 @@ git checkout upstream-sync
 git reset --hard upstream/master
 
 # 3. Compare changes
-git log --oneline main..upstream-sync
-git diff main..upstream-sync --stat
+git log --oneline personal..upstream-sync
+git diff personal..upstream-sync --stat
 
 # 4. Cherry-pick specific fixes
-git checkout main
+git checkout personal
 git cherry-pick <commit-hash>
 
 # 5. Update this file with what was picked/skipped

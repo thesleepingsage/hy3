@@ -268,7 +268,7 @@ void dispatch_equalize(std::string arg) {
 	auto workspace = workspace_for_action();
 	if (!valid(workspace)) return;
 
-	bool recursive = (arg == "recursive");
+	bool recursive = (arg == "workspace");
 	g_Hy3Layout->equalize(workspace.get(), recursive);
 }
 

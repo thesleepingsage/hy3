@@ -390,6 +390,6 @@ plugin {
    - `expand` - expand by one node
    - `shrink` - shrink by one node
    - `base` - undo all expansions
- - `hy3:equalize, [recursive]` - equalize window sizes in group
+ - `hy3:equalize, [workspace]` - equalize window sizes in group
    - no argument: equalizes immediate siblings of the focused window
-   - `recursive`: equalizes all windows across the entire workspace tree
+   - `workspace`: equalizes all windows across the entire workspace tree

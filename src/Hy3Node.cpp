@@ -342,10 +342,12 @@ void Hy3Node::recalcSizePosRecursive(bool no_animation) {
 			return;
 		}
 
+		auto reservedTopLeft = Vector2D(monitor->m_reservedArea.left(), monitor->m_reservedArea.top());
+		auto reservedBottomRight = Vector2D(monitor->m_reservedArea.right(), monitor->m_reservedArea.bottom());
 		Hy3Node fake_node = {
 		    .data = window,
-		    .position = monitor->m_position + monitor->m_reservedTopLeft,
-		    .size = monitor->m_size - monitor->m_reservedTopLeft - monitor->m_reservedBottomRight,
+		    .position = monitor->m_position + reservedTopLeft,
+		    .size = monitor->m_size - reservedTopLeft - reservedBottomRight,
 		    .gap_topleft_offset = gap_topleft_offset,
 		    .gap_bottomright_offset = gap_bottomright_offset,
 		    .workspace = this->workspace,
@@ -419,7 +421,7 @@ void Hy3Node::recalcSizePosRecursive(bool no_animation) {
 
 		if (expanded_node == nullptr) {
 			hy3_log(
-			    ERR,
+			    Log::ERR,
 			    "recalcSizePosRecursive: unable to find expansion target of latch node {:x}",
 			    (uintptr_t) this
 			);
@@ -752,7 +754,7 @@ std::string Hy3Node::debugNode() {
 Hy3Node* Hy3Node::removeFromParentRecursive(Hy3Node** expand_actor) {
 	Hy3Node* parent = this;
 
-	hy3_log(TRACE, "removing parent nodes of {:x} recursively", (uintptr_t) parent);
+	hy3_log(Log::TRACE, "removing parent nodes of {:x} recursively", (uintptr_t) parent);
 
 	if (this->parent != nullptr) {
 		auto& actor = this->getExpandActor();
@@ -785,7 +787,7 @@ Hy3Node* Hy3Node::removeFromParentRecursive(Hy3Node** expand_actor) {
 
 		if (!group.children.remove(child)) {
 			hy3_log(
-			    ERR,
+			    Log::ERR,
 			    "unable to remove child node {:x} from parent node {:x}, child's parent pointer is "
 			    "likely dangling",
 			    (uintptr_t) child,
@@ -862,7 +864,7 @@ bool Hy3Node::swallowGroups(Hy3Node* into) {
 	// group is wrong.
 	if (into->parent == nullptr && child->data.is_window()) return false;
 
-	hy3_log(TRACE, "swallowing node {:x} into node {:x}", (uintptr_t) child, (uintptr_t) into);
+	hy3_log(Log::TRACE, "swallowing node {:x} into node {:x}", (uintptr_t) child, (uintptr_t) into);
 
 	Hy3Node::swapData(*into, *child);
 	into->layout->nodes.remove(*child);
@@ -896,7 +898,7 @@ Hy3Node* Hy3Node::getImmediateSibling(ShiftDirection direction) {
 	}
 
 	if (list_sibling == group.children.end()) {
-		hy3_log(WARN, "getImmediateSibling: sibling not found");
+		hy3_log(Log::WARN, "getImmediateSibling: sibling not found");
 		list_sibling = iter;
 	}
 
@@ -961,7 +963,7 @@ int directionToIteratorIncrement(ShiftDirection direction) {
 	case ShiftDirection::Up: return -1;
 	case ShiftDirection::Right:
 	case ShiftDirection::Down: return 1;
-	default: hy3_log(WARN, "Unknown ShiftDirection enum value: {}", (int) direction); return 1;
+	default: hy3_log(Log::WARN, "Unknown ShiftDirection enum value: {}", (int) direction); return 1;
 	}
 }
 

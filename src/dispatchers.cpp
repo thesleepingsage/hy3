@@ -1,6 +1,7 @@
 #include <optional>
 
 #include <hyprland/src/Compositor.hpp>
+#include <hyprland/src/debug/log/Logger.hpp>
 #include <hyprland/src/desktop/DesktopTypes.hpp>
 #include <hyprland/src/plugins/PluginAPI.hpp>
 #include <hyprutils/string/String.hpp>
@@ -187,7 +188,7 @@ void dispatch_focustab(std::string value) {
 		focus = TabFocus::Index;
 		if (!isNumber(args[i])) return;
 		index = std::stoi(args[i]);
-		Debug::log(LOG, "Focus index '%s' -> %d, errno: %d", args[i].c_str(), index, errno);
+		Log::logger->log(Log::DEBUG, "Focus index '{}' -> {}, errno: {}", args[i], index, errno);
 	} else return;
 
 	i++;
@@ -277,10 +278,10 @@ SDispatchResult dispatch_debug(std::string arg) {
 
 	auto* root = g_Hy3Layout->getWorkspaceRootGroup(workspace.get());
 	if (!valid(workspace)) {
-		hy3_log(LOG, "DEBUG NODES: no nodes on workspace");
+		hy3_log(Log::DEBUG, "DEBUG NODES: no nodes on workspace");
 		return { .success = false, .error = "no nodes on workspace" };
 	} else {
-		hy3_log(LOG, "DEBUG NODES\n{}", root->debugNode().c_str());
+		hy3_log(Log::DEBUG, "DEBUG NODES\n{}", root->debugNode().c_str());
 		return { .success = false, .error = root->debugNode() };
 	}
 }

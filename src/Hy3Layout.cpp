@@ -25,11 +25,11 @@
 #include "TabGroup.hpp"
 #include "globals.hpp"
 #include "src/SharedDefs.hpp"
-#include "src/desktop/WLSurface.hpp"
-#include "src/desktop/Window.hpp"
-#include "src/desktop/rule/Rule.hpp"
-#include "src/desktop/types/OverridableVar.hpp"
-#include "src/devices/IPointer.hpp"
+#include <hyprland/src/desktop/view/WLSurface.hpp>
+#include <hyprland/src/desktop/view/Window.hpp>
+#include <hyprland/src/desktop/rule/Rule.hpp>
+#include <hyprland/src/desktop/types/OverridableVar.hpp>
+#include <hyprland/src/devices/IPointer.hpp>
 
 PHLWORKSPACE workspace_for_action(bool allow_fullscreen) {
 	if (g_pLayoutManager->getCurrentLayout() != g_Hy3Layout.get()) return nullptr;
@@ -70,7 +70,7 @@ SP<HOOK_CALLBACK_FN> mouseButtonPtr;
 
 void Hy3Layout::onWindowCreatedTiling(PHLWINDOW window, eDirection) {
 	hy3_log(
-	    LOG,
+	    Log::DEBUG,
 	    "onWindowCreatedTiling called with window {:x} (floating: {}, monitor: {}, workspace: {})",
 	    (uintptr_t) window.get(),
 	    window->m_isFloating,
@@ -83,7 +83,7 @@ void Hy3Layout::onWindowCreatedTiling(PHLWINDOW window, eDirection) {
 	auto* existing = this->getNodeFromWindow(window.get());
 	if (existing != nullptr) {
 		hy3_log(
-		    ERR,
+		    Log::ERR,
 		    "onWindowCreatedTiling called with a window ({:x}) that is already tiled (node: {:x})",
 		    (uintptr_t) window.get(),
 		    (uintptr_t) existing
@@ -105,7 +105,7 @@ void Hy3Layout::onWindowCreatedTiling(PHLWINDOW window, eDirection) {
 void Hy3Layout::insertNode(Hy3Node& node) {
 	if (node.parent != nullptr) {
 		hy3_log(
-		    ERR,
+		    Log::ERR,
 		    "insertNode called for node {:x} which already has a parent ({:x})",
 		    (uintptr_t) &node,
 		    (uintptr_t) node.parent
@@ -115,7 +115,7 @@ void Hy3Layout::insertNode(Hy3Node& node) {
 
 	if (!valid(node.workspace)) {
 		hy3_log(
-		    ERR,
+		    Log::ERR,
 		    "insertNode called for node {:x} with invalid workspace id {}",
 		    (uintptr_t) &node,
 		    node.workspace->m_id
@@ -155,7 +155,7 @@ void Hy3Layout::insertNode(Hy3Node& node) {
 		} else {
 			auto mouse_window = g_pCompositor->vectorToWindowUnified(
 			    g_pInputManager->getMouseCoordsInternal(),
-			    RESERVED_EXTENTS | INPUT_EXTENTS
+			    Desktop::View::RESERVED_EXTENTS | Desktop::View::INPUT_EXTENTS
 			);
 
 			if (mouse_window != nullptr && mouse_window->m_workspace == node.workspace) {
@@ -181,15 +181,17 @@ void Hy3Layout::insertNode(Hy3Node& node) {
 			static const auto tab_first_window =
 			    ConfigValue<Hyprlang::INT>("plugin:hy3:tab_first_window");
 
+			auto reservedTopLeft = Vector2D(monitor->m_reservedArea.left(), monitor->m_reservedArea.top());
+			auto reservedBottomRight = Vector2D(monitor->m_reservedArea.right(), monitor->m_reservedArea.bottom());
 			auto width =
-			    monitor->m_size.x - monitor->m_reservedBottomRight.x - monitor->m_reservedTopLeft.x;
+			    monitor->m_size.x - reservedBottomRight.x - reservedTopLeft.x;
 			auto height =
-			    monitor->m_size.y - monitor->m_reservedBottomRight.y - monitor->m_reservedTopLeft.y;
+			    monitor->m_size.y - reservedBottomRight.y - reservedTopLeft.y;
 
 			this->nodes.push_back({
 			    .data = height > width ? Hy3GroupLayout::SplitV : Hy3GroupLayout::SplitH,
-			    .position = monitor->m_position + monitor->m_reservedTopLeft,
-			    .size = monitor->m_size - monitor->m_reservedTopLeft - monitor->m_reservedBottomRight,
+			    .position = monitor->m_position + reservedTopLeft,
+			    .size = monitor->m_size - reservedTopLeft - reservedBottomRight,
 			    .workspace = node.workspace,
 			    .layout = this,
 			});
@@ -214,14 +216,14 @@ void Hy3Layout::insertNode(Hy3Node& node) {
 	}
 
 	if (opening_into->data.is_window()) {
-		hy3_log(ERR, "opening_into node ({:x}) was not a group node", (uintptr_t) opening_into);
+		hy3_log(Log::ERR, "opening_into node ({:x}) was not a group node", (uintptr_t) opening_into);
 		errorNotif();
 		return;
 	}
 
 	if (opening_into->workspace != node.workspace) {
 		hy3_log(
-		    WARN,
+		    Log::WARN,
 		    "opening_into node ({:x}) is on workspace {} which does not match the new window "
 		    "(workspace {})",
 		    (uintptr_t) opening_into,
@@ -274,7 +276,7 @@ void Hy3Layout::insertNode(Hy3Node& node) {
 	}
 
 	hy3_log(
-	    LOG,
+	    Log::DEBUG,
 	    "tiled node {:x} inserted after node {:x} in node {:x}",
 	    (uintptr_t) &node,
 	    (uintptr_t) opening_after,
@@ -294,7 +296,7 @@ void Hy3Layout::onWindowRemovedTiling(PHLWINDOW window) {
 	if (node == nullptr) return;
 
 	hy3_log(
-	    LOG,
+	    Log::DEBUG,
 	    "removing window ({:x} as node {:x}) from node {:x}",
 	    (uintptr_t) window.get(),
 	    (uintptr_t) node,
@@ -345,7 +347,7 @@ void Hy3Layout::onWindowFocusChange(PHLWINDOW window) {
 	if (node == nullptr) return;
 
 	hy3_log(
-	    TRACE,
+	    Log::TRACE,
 	    "changing window focus to window {:x} as node {:x}",
 	    (uintptr_t) window.get(),
 	    (uintptr_t) node
@@ -361,7 +363,7 @@ bool Hy3Layout::isWindowTiled(PHLWINDOW window) {
 }
 
 void Hy3Layout::recalculateMonitor(const MONITORID& monitor_id) {
-	hy3_log(LOG, "recalculating monitor {}", monitor_id);
+	hy3_log(Log::DEBUG, "recalculating monitor {}", monitor_id);
 	const auto monitor = g_pCompositor->getMonitorFromID(monitor_id);
 	if (monitor == nullptr) return;
 
@@ -369,11 +371,14 @@ void Hy3Layout::recalculateMonitor(const MONITORID& monitor_id) {
 
 	// todo: refactor this
 
+	auto reservedTopLeft = Vector2D(monitor->m_reservedArea.left(), monitor->m_reservedArea.top());
+	auto reservedBottomRight = Vector2D(monitor->m_reservedArea.right(), monitor->m_reservedArea.bottom());
+
 	auto* top_node = this->getWorkspaceRootGroup(monitor->m_activeWorkspace.get());
 	if (top_node != nullptr) {
-		top_node->position = monitor->m_position + monitor->m_reservedTopLeft;
+		top_node->position = monitor->m_position + reservedTopLeft;
 		top_node->size =
-		    monitor->m_size - monitor->m_reservedTopLeft - monitor->m_reservedBottomRight;
+		    monitor->m_size - reservedTopLeft - reservedBottomRight;
 
 		top_node->recalcSizePosRecursive();
 	}
@@ -381,9 +386,9 @@ void Hy3Layout::recalculateMonitor(const MONITORID& monitor_id) {
 	top_node = this->getWorkspaceRootGroup(monitor->m_activeSpecialWorkspace.get());
 
 	if (top_node != nullptr) {
-		top_node->position = monitor->m_position + monitor->m_reservedTopLeft;
+		top_node->position = monitor->m_position + reservedTopLeft;
 		top_node->size =
-		    monitor->m_size - monitor->m_reservedTopLeft - monitor->m_reservedBottomRight;
+		    monitor->m_size - reservedTopLeft - reservedBottomRight;
 
 		top_node->recalcSizePosRecursive();
 	}
@@ -424,16 +429,16 @@ void Hy3Layout::resizeActiveWindow(const Vector2D& delta, eRectCorner corner, PH
 		auto& monitor = window->m_monitor;
 
 		const bool display_left =
-		    STICKS(node->position.x, monitor->m_position.x + monitor->m_reservedTopLeft.x);
+		    STICKS(node->position.x, monitor->m_position.x + monitor->m_reservedArea.left());
 		const bool display_right = STICKS(
 		    node->position.x + node->size.x,
-		    monitor->m_position.x + monitor->m_size.x - monitor->m_reservedBottomRight.x
+		    monitor->m_position.x + monitor->m_size.x - monitor->m_reservedArea.right()
 		);
 		const bool display_top =
-		    STICKS(node->position.y, monitor->m_position.y + monitor->m_reservedTopLeft.y);
+		    STICKS(node->position.y, monitor->m_position.y + monitor->m_reservedArea.top());
 		const bool display_bottom = STICKS(
 		    node->position.y + node->size.y,
-		    monitor->m_position.y + monitor->m_size.y - monitor->m_reservedBottomRight.y
+		    monitor->m_position.y + monitor->m_size.y - monitor->m_reservedArea.bottom()
 		);
 
 		Vector2D resize_delta = delta;
@@ -554,10 +559,12 @@ void Hy3Layout::fullscreenRequestForWindow(
 			    (int) (-(gaps_in->m_top - gaps_out->m_top) + -(gaps_in->m_bottom - gaps_out->m_bottom))
 			);
 
+			auto reservedTopLeft = Vector2D(monitor->m_reservedArea.left(), monitor->m_reservedArea.top());
+			auto reservedBottomRight = Vector2D(monitor->m_reservedArea.right(), monitor->m_reservedArea.bottom());
 			Hy3Node fakeNode = {
 			    .data = window,
-			    .position = monitor->m_position + monitor->m_reservedTopLeft,
-			    .size = monitor->m_size - monitor->m_reservedTopLeft - monitor->m_reservedBottomRight,
+			    .position = monitor->m_position + reservedTopLeft,
+			    .size = monitor->m_size - reservedTopLeft - reservedBottomRight,
 			    .gap_topleft_offset = gap_pos_offset,
 			    .gap_bottomright_offset = gap_size_offset,
 			    .workspace = window->m_workspace,
@@ -646,7 +653,7 @@ PHLWINDOW Hy3Layout::getNextWindowCandidate(PHLWINDOW window) {
 	}
 }
 
-PHLWINDOW Hy3Layout::findTiledWindowCandidate(const CWindow* from) {
+PHLWINDOW Hy3Layout::findTiledWindowCandidate(const Desktop::View::CWindow* from) {
 	auto* node = this->getWorkspaceFocusedNode(from->m_workspace.get(), true);
 	if (node != nullptr && node->data.is_window()) {
 		return node->data.as_window();
@@ -655,7 +662,7 @@ PHLWINDOW Hy3Layout::findTiledWindowCandidate(const CWindow* from) {
 	return PHLWINDOW();
 }
 
-PHLWINDOW Hy3Layout::findFloatingWindowCandidate(const CWindow* from) {
+PHLWINDOW Hy3Layout::findFloatingWindowCandidate(const Desktop::View::CWindow* from) {
 	// return the first floating window on the same workspace that has not asked not to be focused
 	for (auto& w: g_pCompositor->m_windows | std::views::reverse) {
 		if (w->m_isMapped && !w->isHidden() && w->m_isFloating && !w->isX11OverrideRedirect()
@@ -1091,7 +1098,7 @@ void Hy3Layout::moveNodeToWorkspace(
 	auto target = getWorkspaceIDNameFromString(operationWorkspaceForName(wsname));
 
 	if (target.id == WORKSPACE_INVALID) {
-		hy3_log(ERR, "moveNodeToWorkspace called with invalid workspace {}", wsname);
+		hy3_log(Log::ERR, "moveNodeToWorkspace called with invalid workspace {}", wsname);
 		return;
 	}
 
@@ -1110,7 +1117,7 @@ void Hy3Layout::moveNodeToWorkspace(
 	if (!valid(origin_ws)) return;
 
 	if (workspace == nullptr) {
-		hy3_log(LOG, "creating target workspace {} for node move", target.id);
+		hy3_log(Log::DEBUG, "creating target workspace {} for node move", target.id);
 
 		workspace = g_pCompositor->createNewWorkspace(target.id, origin_ws->monitorID(), target.name);
 	}
@@ -1125,7 +1132,7 @@ void Hy3Layout::moveNodeToWorkspace(
 		if (node == nullptr) return;
 
 		hy3_log(
-		    LOG,
+		    Log::DEBUG,
 		    "moving node {:x} from workspace {} to workspace {} (follow: {})",
 		    (uintptr_t) node,
 		    origin->m_id,
@@ -1152,11 +1159,7 @@ void Hy3Layout::moveNodeToWorkspace(
 			origin_ws->m_monitor->setSpecialWorkspace(nullptr);
 		}
 
-		static const auto allow_workspace_cycles =
-		    ConfigValue<Hyprlang::INT>("binds:allow_workspace_cycles");
-
 		monitor->changeWorkspace(workspace);
-		if (*allow_workspace_cycles) workspace->rememberPrevWorkspace(origin_ws);
 
 		node->parent->recalcSizePosRecursive();
 		node->focus(warp);
@@ -1296,12 +1299,14 @@ void Hy3Layout::focusTab(
 		auto ptrSurfaceResource = g_pSeatManager->m_state.pointerFocus.lock();
 		if (!ptrSurfaceResource) return;
 
-		auto ptrSurface = CWLSurface::fromResource(ptrSurfaceResource);
+		auto ptrSurface = Desktop::View::CWLSurface::fromResource(ptrSurfaceResource);
 		if (!ptrSurface) return;
 
 		// non window-parented surface focused, cant have a tab
-		auto window = ptrSurface->getWindow();
-		if (!window || window->m_isFloating) return;
+		auto view = ptrSurface->view();
+		if (!view || view->type() != Desktop::View::VIEW_TYPE_WINDOW) return;
+		auto* windowPtr = static_cast<Desktop::View::CWindow*>(view.get());
+		if (!windowPtr || windowPtr->m_isFloating) return;
 
 		auto mouse_pos = g_pInputManager->getMouseCoordsInternal();
 		tab_node = findTabBarAt(*node, mouse_pos, &tab_focused_node);
@@ -1577,7 +1582,7 @@ void Hy3Layout::warpCursorWithFocus(const Vector2D& target, bool force) {
 	}
 }
 
-bool Hy3Layout::shouldRenderSelected(const CWindow* window) {
+bool Hy3Layout::shouldRenderSelected(const Desktop::View::CWindow* window) {
 	if (window == nullptr) return false;
 	auto* root = this->getWorkspaceRootGroup(window->m_workspace.get());
 	if (root == nullptr || root->data.as_group().focused_child == nullptr) return false;
@@ -1594,6 +1599,7 @@ bool Hy3Layout::shouldRenderSelected(const CWindow* window) {
 		if (node == nullptr) return false;
 		return focused->data.as_group().hasChild(node);
 	}
+	default: return false;
 	}
 }
 
@@ -1684,14 +1690,16 @@ void Hy3Layout::mouseButtonHook(void*, SCallbackInfo& info, std::any data) {
 	auto ptr_surface_resource = g_pSeatManager->m_state.pointerFocus.lock();
 	if (!ptr_surface_resource) return;
 
-	auto ptr_surface = CWLSurface::fromResource(ptr_surface_resource);
+	auto ptr_surface = Desktop::View::CWLSurface::fromResource(ptr_surface_resource);
 	if (!ptr_surface) return;
 
 	// non window-parented surface focused, cant have a tab
-	auto window = ptr_surface->getWindow();
+	auto view = ptr_surface->view();
+	if (!view || view->type() != Desktop::View::VIEW_TYPE_WINDOW) return;
+	auto* window = static_cast<Desktop::View::CWindow*>(view.get());
 	if (!window || window->m_isFloating || window->isFullscreen()) return;
 
-	auto* node = g_Hy3Layout->getNodeFromWindow(window.get());
+	auto* node = g_Hy3Layout->getNodeFromWindow(window);
 	if (!node) return;
 
 	auto* root = node;
@@ -1713,7 +1721,7 @@ void Hy3Layout::mouseButtonHook(void*, SCallbackInfo& info, std::any data) {
 	info.cancelled = true;
 }
 
-Hy3Node* Hy3Layout::getNodeFromWindow(const CWindow* window) {
+Hy3Node* Hy3Layout::getNodeFromWindow(const Desktop::View::CWindow* window) {
 	for (auto& node: this->nodes) {
 		if (node.data.is_window() && node.data.as_window().get() == window) {
 			return &node;
@@ -1732,7 +1740,7 @@ void Hy3Layout::applyNodeDataToWindow(Hy3Node* node, bool no_animation) {
 
 	if (monitor == nullptr) {
 		hy3_log(
-		    ERR,
+		    Log::ERR,
 		    "node {:x}'s workspace has no associated monitor, cannot apply node data",
 		    (uintptr_t) node
 		);
@@ -1744,7 +1752,7 @@ void Hy3Layout::applyNodeDataToWindow(Hy3Node* node, bool no_animation) {
 
 	if (!valid(window) || !window->m_isMapped) {
 		hy3_log(
-		    ERR,
+		    Log::ERR,
 		    "node {:x} is an unmapped window ({:x}), cannot apply node data, removing from tiled "
 		    "layout",
 		    (uintptr_t) node,
@@ -2083,7 +2091,7 @@ void Hy3Layout::updateAutotileWorkspaces() {
 		try {
 			this->autotile.workspaces.insert(std::stoi(*s));
 		} catch (...) {
-			hy3_log(ERR, "autotile:workspaces: invalid workspace id: {}", (std::string) *s);
+			hy3_log(Log::ERR, "autotile:workspaces: invalid workspace id: {}", (std::string) *s);
 		}
 	}
 }
